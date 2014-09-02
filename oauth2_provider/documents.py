@@ -1,27 +1,25 @@
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db import models
 from django.utils import timezone
-from .documents import get_application_doc
-try:
-    # Django's new application loading system
-    from django.apps import apps
-    get_model = apps.get_model
-except ImportError:
-    from django.db.models import get_model
-from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
-from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import ugettext_lazy as _
+from mongoengine.base.common import get_document
+from mongoengine.document import Document, EmbeddedDocument
+from mongoengine.errors import ValidationError
+from mongoengine.fields import StringField, ReferenceField, DateTimeField,\
+    EmbeddedDocumentField
 
-from .settings import oauth2_settings
-from .compat import AUTH_USER_MODEL
 from .generators import generate_client_secret, generate_client_id
+from .settings import oauth2_settings
 from .validators import validate_uris
+APPLICATION_DOCUMENT = oauth2_settings.APPLICATION_MODEL
 
 
 @python_2_unicode_compatible
-class AbstractApplication(models.Model):
+class AbstractApplication(Document):
+
     """
     An Application instance represents a Client on the Authorization server.
     Usually an Application is created manually by client's developers after
@@ -59,21 +57,21 @@ class AbstractApplication(models.Model):
         (GRANT_CLIENT_CREDENTIALS, _('Client credentials')),
     )
 
-    client_id = models.CharField(max_length=100, unique=True,
-                                 default=generate_client_id, db_index=True)
-    user = models.ForeignKey(AUTH_USER_MODEL, related_name="%(app_label)s_%(class)s")
+    client_id = StringField(max_length=100, unique=True,
+        default=generate_client_id)
+    user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
     help_text = _("Allowed URIs list, space separated")
-    redirect_uris = models.TextField(help_text=help_text,
-                                     validators=[validate_uris], blank=True)
-    client_type = models.CharField(max_length=32, choices=CLIENT_TYPES)
-    authorization_grant_type = models.CharField(max_length=32,
-                                                choices=GRANT_TYPES)
-    client_secret = models.CharField(max_length=255, blank=True,
-                                     default=generate_client_secret, db_index=True)
-    name = models.CharField(max_length=255, blank=True)
+    redirect_uris = StringField(help_text=help_text)
+    client_type = StringField(max_length=32, choices=CLIENT_TYPES)
+    authorization_grant_type = StringField(max_length=32,
+        choices=GRANT_TYPES)
+    client_secret = StringField(max_length=255, default=generate_client_secret)
+    name = StringField(max_length=255)
 
-    class Meta:
-        abstract = True
+    meta = {
+        'abstract': True,
+        'indexes': ['client_id', 'client_secret'],
+    }
 
     @property
     def default_redirect_uri(self):
@@ -97,7 +95,7 @@ class AbstractApplication(models.Model):
         return uri in self.redirect_uris.split()
 
     def clean(self):
-        from django.core.exceptions import ValidationError
+        validate_uris(self.redirect_uris)
         if not self.redirect_uris \
             and self.authorization_grant_type \
             in (AbstractApplication.GRANT_AUTHORIZATION_CODE,
@@ -116,11 +114,12 @@ class Application(AbstractApplication):
     pass
 
 # Add swappable like this to not break django 1.4 compatibility
-Application._meta.swappable = 'OAUTH2_PROVIDER_APPLICATION_MODEL'
+Application._meta.swappable = 'OAUTH2_PROVIDER_APPLICATION_DOCUMENT'
 
 
 @python_2_unicode_compatible
-class Grant(models.Model):
+class Grant(Document):
+
     """
     A Grant instance represents a token with a short lifetime that can
     be swapped for an access token, as described in :rfc:`4.1.2`
@@ -135,12 +134,17 @@ class Grant(models.Model):
     * :attr:`redirect_uri` Self explained
     * :attr:`scope` Required scopes, optional
     """
-    user = models.ForeignKey(AUTH_USER_MODEL)
-    code = models.CharField(max_length=255, db_index=True)  # code comes from oauthlib
-    application = models.ForeignKey(oauth2_settings.APPLICATION_MODEL)
-    expires = models.DateTimeField()
-    redirect_uri = models.CharField(max_length=255)
-    scope = models.TextField(blank=True)
+    user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
+    # code comes from oauthlib
+    code = StringField(max_length=255)
+    application = ReferenceField(APPLICATION_DOCUMENT)
+    expires = DateTimeField()
+    redirect_uri = StringField(max_length=255)
+    scope = StringField()
+
+    meta = {
+        'indexes': ['code'],
+    }
 
     def is_expired(self):
         """
@@ -156,7 +160,29 @@ class Grant(models.Model):
 
 
 @python_2_unicode_compatible
-class AccessToken(models.Model):
+class RefreshToken(EmbeddedDocument):
+
+    """
+    A RefreshToken instance represents a token that can be swapped for a new
+    access token when it expires.
+
+    Fields:
+
+    * :attr:`user` The Django user representing resources' owner
+    * :attr:`token` Token value
+    * :attr:`application` Application instance
+    """
+    user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
+    token = StringField(max_length=255)
+    application = ReferenceField(APPLICATION_DOCUMENT)
+
+    def __str__(self):
+        return self.token
+
+
+@python_2_unicode_compatible
+class AccessToken(Document):
+
     """
     An AccessToken instance represents the actual access token to
     access user's resources, as in :rfc:`5`.
@@ -170,11 +196,16 @@ class AccessToken(models.Model):
                       :data:`settings.ACCESS_TOKEN_EXPIRE_SECONDS`
     * :attr:`scope` Allowed scopes
     """
-    user = models.ForeignKey(AUTH_USER_MODEL)
-    token = models.CharField(max_length=255, db_index=True)
-    application = models.ForeignKey(oauth2_settings.APPLICATION_MODEL)
-    expires = models.DateTimeField()
-    scope = models.TextField(blank=True)
+    user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
+    token = StringField(max_length=255)
+    application = ReferenceField(APPLICATION_DOCUMENT)
+    expires = DateTimeField()
+    scope = StringField()
+    refresh_token = EmbeddedDocumentField(RefreshToken)
+
+    meta = {
+        'indexes': ['token', 'refresh_token.token'],
+    }
 
     def is_valid(self, scopes=None):
         """
@@ -208,42 +239,6 @@ class AccessToken(models.Model):
         return self.token
 
 
-@python_2_unicode_compatible
-class RefreshToken(models.Model):
-    """
-    A RefreshToken instance represents a token that can be swapped for a new
-    access token when it expires.
-
-    Fields:
-
-    * :attr:`user` The Django user representing resources' owner
-    * :attr:`token` Token value
-    * :attr:`application` Application instance
-    * :attr:`access_token` AccessToken instance this refresh token is
-                           bounded to
-    """
-    user = models.ForeignKey(AUTH_USER_MODEL)
-    token = models.CharField(max_length=255, db_index=True)
-    application = models.ForeignKey(oauth2_settings.APPLICATION_MODEL)
-    access_token = models.OneToOneField(AccessToken,
-                                        related_name='refresh_token')
-
-    def __str__(self):
-        return self.token
-
-
-def get_application_model():
-    """ Return the Application model that is active in this project. """
-    # Return mongoengine document instead if desired.
-    if oauth2_settings.USE_MONGOENGINE:
-        return get_application_doc()
-    try:
-        app_label, model_name = oauth2_settings.APPLICATION_MODEL.split('.')
-    except ValueError:
-        e = "APPLICATION_MODEL must be of the form 'app_label.model_name'"
-        raise ImproperlyConfigured(e)
-    app_model = get_model(app_label, model_name)
-    if app_model is None:
-        e = "APPLICATION_MODEL refers to model {0} that has not been installed"
-        raise ImproperlyConfigured(e.format(oauth2_settings.APPLICATION_MODEL))
-    return app_model
+def get_application_doc():
+    """ Return the Application document that is active in this project. """
+    return get_document(APPLICATION_DOCUMENT)

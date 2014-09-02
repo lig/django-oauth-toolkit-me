@@ -121,6 +121,8 @@ OAUTH2_PROVIDER = {
     '_SCOPES': ['example']
 }
 
+MONGOENGINE_USER_DOCUMENT = 'mongoengine.django.auth.User'
+
 import django
 
 if django.VERSION[:2] < (1, 6):
