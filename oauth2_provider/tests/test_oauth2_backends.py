@@ -1,4 +1,5 @@
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 
 
 from ..backends import get_oauthlib_core

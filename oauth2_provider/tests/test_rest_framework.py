@@ -2,17 +2,17 @@ from datetime import timedelta
 
 from django.conf.urls import patterns, url, include
 from django.http import HttpResponse
-from django.test import TestCase
+from mongoengine.django.tests import MongoTestCase as TestCase
 from django.utils import timezone, unittest
 
 
 from .test_utils import TestCaseUtils
-from ..models import AccessToken, get_application_model
+from ..documents import AccessToken, get_application_doc
 from ..settings import oauth2_settings
 from ..compat import get_user_model
 
 
-Application = get_application_model()
+Application = get_application_doc()
 UserModel = get_user_model()
 
 

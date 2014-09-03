@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
-from django.test import TestCase
+from mongoengine.django.tests import MongoTestCase as TestCase
 
 from ..models import get_application_model
 from ..compat import get_user_model

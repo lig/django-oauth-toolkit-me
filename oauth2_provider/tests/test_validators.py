@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from django.test import TestCase
+from mongoengine.django.tests import MongoTestCase as TestCase
 from django.core.validators import ValidationError
 
 from ..validators import validate_uris

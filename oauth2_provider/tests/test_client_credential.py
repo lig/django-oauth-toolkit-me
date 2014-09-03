@@ -8,7 +8,8 @@ except ImportError:
     import urllib
 
 from django.core.urlresolvers import reverse
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 from django.views.generic import View
 
 from oauthlib.oauth2 import BackendApplicationServer

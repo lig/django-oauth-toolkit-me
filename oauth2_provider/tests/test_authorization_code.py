@@ -4,7 +4,8 @@ import base64
 import json
 import datetime
 
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 

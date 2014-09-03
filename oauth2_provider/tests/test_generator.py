@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from django.test import TestCase
+from mongoengine.django.tests import MongoTestCase as TestCase
 
 from ..settings import oauth2_settings
 from ..generators import (BaseHashGenerator, ClientIdGenerator, ClientSecretGenerator,

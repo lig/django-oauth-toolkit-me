@@ -1,6 +1,7 @@
 from django import forms
+from mongodbforms import DocumentForm
 
-from .models import get_application_model
+from .documents import get_application_doc
 
 
 class AllowForm(forms.Form):
@@ -19,10 +20,9 @@ class AllowForm(forms.Form):
         return super(AllowForm, self).__init__(*args, **kwargs)
 
 
-class RegistrationForm(forms.ModelForm):
-    """
-    TODO: add docstring
-    """
+class RegistrationForm(DocumentForm):
+
     class Meta:
-        model = get_application_model()
-        fields = ('name', 'client_id', 'client_secret', 'client_type', 'authorization_grant_type', 'redirect_uris')
+        document = get_application_doc()
+        fields = ('name', 'client_id', 'client_secret', 'client_type',
+            'authorization_grant_type', 'redirect_uris')

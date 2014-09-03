@@ -2,17 +2,18 @@ from __future__ import unicode_literals
 
 import json
 
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
 
 from .test_utils import TestCaseUtils
 from ..compat import urlparse, parse_qs, get_user_model, urlencode
-from ..models import get_application_model, Grant, AccessToken
+from ..documents import get_application_doc, Grant, AccessToken
 from ..settings import oauth2_settings
 from ..views import ScopedProtectedResourceView, ReadWriteScopedResourceView
 
-Application = get_application_model()
+Application = get_application_doc()
 UserModel = get_user_model()
 
 

@@ -9,10 +9,10 @@ from django.contrib.auth import authenticate
 from oauthlib.oauth2 import RequestValidator
 
 from .compat import unquote_plus
-from .models import Grant, AccessToken, RefreshToken, get_application_model
+from .documents import Grant, AccessToken, RefreshToken, get_application_doc
 from .settings import oauth2_settings
 
-Application = get_application_model()
+Application = get_application_doc()
 
 log = logging.getLogger('oauth2_provider')
 

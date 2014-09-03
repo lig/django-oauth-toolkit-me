@@ -6,7 +6,7 @@ except ImportError:
     from django.utils.unittest.case import skipIf
 
 import django
-from django.test import TestCase
+from mongoengine.django.tests import MongoTestCase as TestCase
 from django.test.utils import override_settings
 from django.core.exceptions import ValidationError
 

@@ -1,4 +1,5 @@
-import os
+from mongoengine import connect
+
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -9,10 +10,13 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'example.sqlite',
+        'ENGINE': 'django.db.backends.dummy'
     }
 }
+
+MONGO_DATABASE_NAME = 'test'
+
+MONGODB = connect(MONGO_DATABASE_NAME)[MONGO_DATABASE_NAME]
 
 ALLOWED_HOSTS = []
 
@@ -67,6 +71,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
 
+    'mongoengine.django.mongo_auth',
+
     'oauth2_provider',
     'oauth2_provider.tests',
 )
@@ -118,10 +124,14 @@ LOGGING = {
 }
 
 OAUTH2_PROVIDER = {
-    '_SCOPES': ['example']
+    '_SCOPES': ['example'],
+    'USE_MONGOENGINE': True,
 }
 
+AUTH_USER_MODEL = 'mongo_auth.MongoUser'
 MONGOENGINE_USER_DOCUMENT = 'mongoengine.django.auth.User'
+SESSION_ENGINE = 'mongoengine.django.sessions'
+SESSION_SERIALIZER = 'mongoengine.django.sessions.BSONSerializer'
 
 import django
 

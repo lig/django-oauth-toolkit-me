@@ -14,7 +14,6 @@ from mongoengine.fields import StringField, ReferenceField, DateTimeField,\
 from .generators import generate_client_secret, generate_client_id
 from .settings import oauth2_settings
 from .validators import validate_uris
-APPLICATION_DOCUMENT = oauth2_settings.APPLICATION_MODEL
 
 
 @python_2_unicode_compatible
@@ -114,7 +113,7 @@ class Application(AbstractApplication):
     pass
 
 # Add swappable like this to not break django 1.4 compatibility
-Application._meta.swappable = 'OAUTH2_PROVIDER_APPLICATION_DOCUMENT'
+Application._meta.swappable = 'OAUTH2_PROVIDER_oauth2_settings.APPLICATION_DOCUMENT'
 
 
 @python_2_unicode_compatible
@@ -137,7 +136,7 @@ class Grant(Document):
     user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
     # code comes from oauthlib
     code = StringField(max_length=255)
-    application = ReferenceField(APPLICATION_DOCUMENT)
+    application = ReferenceField(oauth2_settings.APPLICATION_DOCUMENT)
     expires = DateTimeField()
     redirect_uri = StringField(max_length=255)
     scope = StringField()
@@ -174,7 +173,7 @@ class RefreshToken(EmbeddedDocument):
     """
     user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
     token = StringField(max_length=255)
-    application = ReferenceField(APPLICATION_DOCUMENT)
+    application = ReferenceField(oauth2_settings.APPLICATION_DOCUMENT)
 
     def __str__(self):
         return self.token
@@ -198,7 +197,7 @@ class AccessToken(Document):
     """
     user = ReferenceField(settings.MONGOENGINE_USER_DOCUMENT)
     token = StringField(max_length=255)
-    application = ReferenceField(APPLICATION_DOCUMENT)
+    application = ReferenceField(oauth2_settings.APPLICATION_DOCUMENT)
     expires = DateTimeField()
     scope = StringField()
     refresh_token = EmbeddedDocumentField(RefreshToken)
@@ -241,4 +240,4 @@ class AccessToken(Document):
 
 def get_application_doc():
     """ Return the Application document that is active in this project. """
-    return get_document(APPLICATION_DOCUMENT)
+    return get_document(oauth2_settings.APPLICATION_DOCUMENT)

@@ -1,7 +1,8 @@
 import json
 from datetime import timedelta
 
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 from django.utils import timezone
 
 from ..decorators import protected_resource, rw_protected_resource

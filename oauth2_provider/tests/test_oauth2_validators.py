@@ -1,4 +1,4 @@
-from django.test import TestCase
+from mongoengine.django.tests import MongoTestCase as TestCase
 
 import mock
 from oauthlib.common import Request

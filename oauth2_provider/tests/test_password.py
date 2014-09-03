@@ -2,7 +2,8 @@ from __future__ import unicode_literals
 
 import json
 
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 
 from ..models import get_application_model

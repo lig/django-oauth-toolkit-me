@@ -2,18 +2,19 @@ from __future__ import unicode_literals
 
 import datetime
 
-from django.test import TestCase, RequestFactory
+from mongoengine.django.tests import MongoTestCase as TestCase
+from django.test import RequestFactory
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 
 from ..compat import urlencode, get_user_model
-from ..models import get_application_model, AccessToken, RefreshToken
+from ..documents import get_application_doc, AccessToken, RefreshToken
 from ..settings import oauth2_settings
 
 from .test_utils import TestCaseUtils
 
 
-Application = get_application_model()
+Application = get_application_doc()
 UserModel = get_user_model()
 
 

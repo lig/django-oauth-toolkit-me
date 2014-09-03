@@ -11,10 +11,10 @@ from braces.views import LoginRequiredMixin, CsrfExemptMixin
 from ..settings import oauth2_settings
 from ..exceptions import OAuthToolkitError
 from ..forms import AllowForm
-from ..models import get_application_model
+from ..documents import get_application_doc
 from .mixins import OAuthLibMixin
 
-Application = get_application_model()
+Application = get_application_doc()
 
 log = logging.getLogger('oauth2_provider')
 
